@@ -8,6 +8,7 @@ static void (*const somfy_scene_on_enter_handlers[])(void*) = {
     somfy_scene_control_on_enter,
     somfy_scene_add_blind_on_enter,
     somfy_scene_transmit_on_enter,
+    somfy_scene_confirm_remove_on_enter,
 };
 
 static bool (*const somfy_scene_on_event_handlers[])(void*, SceneManagerEvent) = {
@@ -15,6 +16,7 @@ static bool (*const somfy_scene_on_event_handlers[])(void*, SceneManagerEvent) =
     somfy_scene_control_on_event,
     somfy_scene_add_blind_on_event,
     somfy_scene_transmit_on_event,
+    somfy_scene_confirm_remove_on_event,
 };
 
 static void (*const somfy_scene_on_exit_handlers[])(void*) = {
@@ -22,6 +24,7 @@ static void (*const somfy_scene_on_exit_handlers[])(void*) = {
     somfy_scene_control_on_exit,
     somfy_scene_add_blind_on_exit,
     somfy_scene_transmit_on_exit,
+    somfy_scene_confirm_remove_on_exit,
 };
 
 static const SceneManagerHandlers somfy_scene_handlers = {
@@ -69,6 +72,10 @@ static SomfyApp* somfy_app_alloc(void) {
     view_dispatcher_add_view(
         app->view_dispatcher, SomfyViewPopup, popup_get_view(app->popup));
 
+    app->dialog_ex = dialog_ex_alloc();
+    view_dispatcher_add_view(
+        app->view_dispatcher, SomfyViewDialogEx, dialog_ex_get_view(app->dialog_ex));
+
     // Load persisted state (or init empty)
     somfy_state_load(&app->state);
     app->selected_blind = 0;
@@ -84,11 +91,13 @@ static void somfy_app_free(SomfyApp* app) {
     view_dispatcher_remove_view(app->view_dispatcher, SomfyViewSubmenu);
     view_dispatcher_remove_view(app->view_dispatcher, SomfyViewTextInput);
     view_dispatcher_remove_view(app->view_dispatcher, SomfyViewPopup);
+    view_dispatcher_remove_view(app->view_dispatcher, SomfyViewDialogEx);
 
     // Free views
     submenu_free(app->submenu);
     text_input_free(app->text_input);
     popup_free(app->popup);
+    dialog_ex_free(app->dialog_ex);
 
     // Free managers
     scene_manager_free(app->scene_manager);

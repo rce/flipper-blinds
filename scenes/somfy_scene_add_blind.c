@@ -39,8 +39,16 @@ bool somfy_scene_add_blind_on_event(void* context, SceneManagerEvent event) {
             app->state.blinds[idx].rolling_code = 1;
             app->state.count++;
             somfy_state_save(&app->state);
+
+            // Auto-pair: pop back to MainMenu, then push Control → Transmit
+            // so back from Control returns to MainMenu (not TextInput)
+            app->selected_blind = idx;
+            app->selected_command = SomfyCmdProg;
+            scene_manager_search_and_switch_to_previous_scene(
+                app->scene_manager, SomfySceneMainMenu);
+            scene_manager_next_scene(app->scene_manager, SomfySceneControl);
+            scene_manager_next_scene(app->scene_manager, SomfySceneTransmit);
         }
-        scene_manager_search_and_switch_to_previous_scene(app->scene_manager, SomfySceneMainMenu);
         consumed = true;
     }
 

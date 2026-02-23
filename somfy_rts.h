@@ -7,6 +7,7 @@
 #include <gui/modules/submenu.h>
 #include <gui/modules/text_input.h>
 #include <gui/modules/popup.h>
+#include <gui/modules/dialog_ex.h>
 #include <notification/notification_messages.h>
 
 #define SOMFY_MAX_BLINDS 8
@@ -19,6 +20,7 @@ typedef enum {
     SomfySceneControl,
     SomfySceneAddBlind,
     SomfySceneTransmit,
+    SomfySceneConfirmRemove,
     SomfySceneCount,
 } SomfyScene;
 
@@ -27,6 +29,7 @@ typedef enum {
     SomfyViewSubmenu,
     SomfyViewTextInput,
     SomfyViewPopup,
+    SomfyViewDialogEx,
 } SomfyView;
 
 // Somfy RTS commands
@@ -44,6 +47,8 @@ typedef enum {
     SomfyEventCommandSelected,
     SomfyEventNameEntered,
     SomfyEventTxDone,
+    SomfyEventRemoveBlind,
+    SomfyEventRemoveConfirmed,
 } SomfyEvent;
 
 // Blind data
@@ -66,6 +71,7 @@ typedef struct {
     Submenu* submenu;
     TextInput* text_input;
     Popup* popup;
+    DialogEx* dialog_ex;
     NotificationApp* notifications;
     Gui* gui;
 

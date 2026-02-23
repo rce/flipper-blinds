@@ -21,3 +21,8 @@ void somfy_scene_add_blind_on_exit(void* context);
 void somfy_scene_transmit_on_enter(void* context);
 bool somfy_scene_transmit_on_event(void* context, SceneManagerEvent event);
 void somfy_scene_transmit_on_exit(void* context);
+
+// Confirm Remove scene
+void somfy_scene_confirm_remove_on_enter(void* context);
+bool somfy_scene_confirm_remove_on_event(void* context, SceneManagerEvent event);
+void somfy_scene_confirm_remove_on_exit(void* context);
