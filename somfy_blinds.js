@@ -40,7 +40,7 @@ function buildFrame(command, rollingCode, address) {
 function obfuscate(frame) {
     let result = [frame[0]];
     for (let i = 1; i < 7; i++) {
-        result.push(frame[i] ^ frame[i - 1]);
+        result.push(frame[i] ^ result[i - 1]);
     }
     return result;
 }
