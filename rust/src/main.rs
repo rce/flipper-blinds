@@ -21,6 +21,8 @@ fn main(_args: Option<&CStr>) -> i32 {
     let mut notif = NotificationApp::open();
     let mut dialogs = DialogsApp::open();
 
+    flipperzero::info!("Somfy Blinds Rust starting up, meow~");
+
     // Blink green on startup
     notif.notify(&led::ONLY_GREEN);
 
@@ -34,18 +36,22 @@ fn main(_args: Option<&CStr>) -> i32 {
 
         match button {
             DialogMessageButton::Left => {
+                flipperzero::info!("Nya! (green)");
                 notif.notify(&led::ONLY_GREEN);
             }
             DialogMessageButton::Center => {
+                flipperzero::info!("Purr~ (blue)");
                 notif.notify(&led::ONLY_BLUE);
             }
             DialogMessageButton::Right => {
+                flipperzero::info!("Meow! (red)");
                 notif.notify(&led::ONLY_RED);
             }
             DialogMessageButton::Back => break,
         }
     }
 
+    flipperzero::info!("Bye bye, nyaa~ :3");
     // Clean exit
     notif.notify_blocking(&led::RESET_RGB);
     0
