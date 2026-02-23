@@ -6,6 +6,7 @@ let eventLoop = require("event_loop");
 let gui = require("gui");
 let submenuView = require("gui/submenu");
 let textInputView = require("gui/text_input");
+let notify = require("notification");
 
 // Command constants
 let CMD_STOP = 0x1;
@@ -221,6 +222,12 @@ function sendCommand(blindIndex, command) {
     let blind = state.blinds[blindIndex];
 
     let result = transmitCommand(command, blind.rollingCode, blind.address);
+
+    if (result) {
+        notify.blink("green", "short");
+    } else {
+        notify.blink("red", "short");
+    }
 
     // Increment and save rolling code regardless of result
     blind.rollingCode = (blind.rollingCode + 1) & 0xFFFF;
