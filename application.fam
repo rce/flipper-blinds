@@ -1,0 +1,13 @@
+App(
+    appid="somfy_rts",
+    name="Somfy RTS",
+    apptype=FlipperAppType.EXTERNAL,
+    entry_point="somfy_rts_app",
+    stack_size=4 * 1024,
+    fap_icon="images/somfy_rts_10px.png",
+    fap_icon_assets="images",
+    fap_category="Sub-GHz",
+    fap_author="@rce",
+    fap_description="Somfy RTS blind controller — purrfectly automated",
+    fap_version="1.0",
+)
