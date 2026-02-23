@@ -4,6 +4,7 @@
 extern crate flipperzero_rt;
 
 use core::ffi::CStr;
+use flipperzero::notification::{NotificationApp, led};
 use flipperzero_rt::{entry, manifest};
 
 manifest!(
@@ -15,5 +16,8 @@ manifest!(
 entry!(main);
 
 fn main(_args: Option<&CStr>) -> i32 {
+    let mut notif = NotificationApp::open();
+    notif.notify_blocking(&led::ONLY_GREEN);
+
     0
 }
