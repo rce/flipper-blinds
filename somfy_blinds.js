@@ -125,6 +125,7 @@ function buildTransmission(command, rollingCode, address, repeats) {
 
 let SUB_FILE_PATH = "/ext/apps_data/somfy_blinds/temp.sub";
 let DATA_DIR = "/ext/apps_data/somfy_blinds";
+let STATE_FILE = DATA_DIR + "/state.json";
 
 function ensureDataDir() {
     if (!storage.directoryExists(DATA_DIR)) {
@@ -176,8 +177,59 @@ function transmitCommand(command, rollingCode, address) {
     return result;
 }
 
+function loadState() {
+    ensureDataDir();
+    if (!storage.fileExists(STATE_FILE)) {
+        return { blinds: [] };
+    }
+    let file = storage.openFile(STATE_FILE, "r", "open_existing");
+    let content = file.read("ascii", file.size());
+    file.close();
+    return JSON.parse(content);
+}
+
+function saveState(state) {
+    ensureDataDir();
+    if (storage.fileExists(STATE_FILE)) {
+        storage.remove(STATE_FILE);
+    }
+    let file = storage.openFile(STATE_FILE, "w", "create_always");
+    file.write(JSON.stringify(state));
+    file.close();
+}
+
+function addBlind(name) {
+    let state = loadState();
+    // Generate unique 24-bit address offset by blind count
+    let addr = 0x100001 + state.blinds.length + 1;
+    let blind = {
+        name: name,
+        address: addr,
+        rollingCode: 1
+    };
+    state.blinds.push(blind);
+    saveState(state);
+    return blind;
+}
+
+function sendCommand(blindIndex, command) {
+    let state = loadState();
+    let blind = state.blinds[blindIndex];
+
+    let result = transmitCommand(command, blind.rollingCode, blind.address);
+
+    // Increment and save rolling code regardless of result
+    blind.rollingCode = (blind.rollingCode + 1) & 0xFFFF;
+    saveState(state);
+
+    return result;
+}
+
 // Self-test
 ensureDataDir();
+print("Testing state persistence...");
+let testState = loadState();
+print("Loaded state: " + testState.blinds.length.toString() + " blinds");
 print("Generating test signal...");
 let timings = buildTransmission(CMD_UP, 1, 0x654321, 4);
 writeSubFile(timings);
