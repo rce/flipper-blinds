@@ -2,6 +2,10 @@
 print("Somfy Blinds starting, nyaa~");
 let storage = require("storage");
 let subghz = require("subghz");
+let eventLoop = require("event_loop");
+let gui = require("gui");
+let submenuView = require("gui/submenu");
+let textInputView = require("gui/text_input");
 
 // Command constants
 let CMD_STOP = 0x1;
@@ -225,12 +229,78 @@ function sendCommand(blindIndex, command) {
     return result;
 }
 
-// Self-test
+// --- GUI ---
+
+function showMainMenu() {
+    let state = loadState();
+    let items = [];
+    for (let i = 0; i < state.blinds.length; i++) {
+        items.push(state.blinds[i].name);
+    }
+    items.push("+ Add Blind");
+
+    let mainMenu = submenuView.makeWith({
+        header: "Somfy Blinds"
+    }, items);
+
+    eventLoop.subscribe(mainMenu.chosen, function(_sub, index) {
+        let st = loadState();
+        if (index < st.blinds.length) {
+            showControlMenu(index);
+        } else {
+            showAddBlind();
+        }
+    });
+
+    gui.viewDispatcher.switchTo(mainMenu);
+}
+
+function showControlMenu(blindIndex) {
+    let state = loadState();
+    let blind = state.blinds[blindIndex];
+
+    let controlMenu = submenuView.makeWith({
+        header: blind.name
+    }, ["Up", "Stop", "Down", "Pair (Prog)"]);
+
+    eventLoop.subscribe(controlMenu.chosen, function(_sub, index) {
+        let commands = [CMD_UP, CMD_STOP, CMD_DOWN, CMD_PROG];
+        let cmdNames = ["Up", "Stop", "Down", "Pair"];
+        print("Sending " + cmdNames[index] + "...");
+        sendCommand(blindIndex, commands[index]);
+        print("Sent!");
+    });
+
+    eventLoop.subscribe(gui.viewDispatcher.navigation, function() {
+        showMainMenu();
+    });
+
+    gui.viewDispatcher.switchTo(controlMenu);
+}
+
+function showAddBlind() {
+    let nameInput = textInputView.makeWith({
+        header: "Blind Name",
+        minLength: 1,
+        maxLength: 20,
+        defaultText: "Blind",
+        defaultTextClear: true
+    });
+
+    eventLoop.subscribe(nameInput.input, function(_sub, name) {
+        addBlind(name);
+        print("Added blind: " + name);
+        showMainMenu();
+    });
+
+    eventLoop.subscribe(gui.viewDispatcher.navigation, function() {
+        showMainMenu();
+    });
+
+    gui.viewDispatcher.switchTo(nameInput);
+}
+
+// App entry
 ensureDataDir();
-print("Testing state persistence...");
-let testState = loadState();
-print("Loaded state: " + testState.blinds.length.toString() + " blinds");
-print("Generating test signal...");
-let timings = buildTransmission(CMD_UP, 1, 0x654321, 4);
-writeSubFile(timings);
-print("Sub file written, " + timings.length.toString() + " timing values");
+showMainMenu();
+eventLoop.run();
