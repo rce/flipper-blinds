@@ -1,5 +1,7 @@
 // Somfy RTS Blind Controller for Flipper Zero
 print("Somfy Blinds starting, nyaa~");
+let storage = require("storage");
+let subghz = require("subghz");
 
 // Command constants
 let CMD_STOP = 0x1;
@@ -121,8 +123,62 @@ function buildTransmission(command, rollingCode, address, repeats) {
     return timings;
 }
 
-// Self-test: print a frame for known values
-let testFrame = buildFrame(CMD_UP, 1, 0x123456);
-let testOb = obfuscate(testFrame);
-print("Frame: " + testFrame.join(","));
-print("Obfuscated: " + testOb.join(","));
+let SUB_FILE_PATH = "/ext/apps_data/somfy_blinds/temp.sub";
+let DATA_DIR = "/ext/apps_data/somfy_blinds";
+
+function ensureDataDir() {
+    if (!storage.directoryExists(DATA_DIR)) {
+        storage.makeDirectory(DATA_DIR);
+    }
+}
+
+function writeSubFile(timings) {
+    ensureDataDir();
+
+    // Build .sub file content
+    let header = "Filetype: Flipper SubGhz RAW File\n";
+    header += "Version: 1\n";
+    header += "Frequency: 433420000\n";
+    header += "Preset: FuriHalSubGhzPresetOok650Async\n";
+    header += "Protocol: RAW\n";
+
+    // Split timings into lines of max 512 values
+    let lines = "";
+    let lineValues = [];
+    for (let i = 0; i < timings.length; i++) {
+        lineValues.push(timings[i].toString());
+        if (lineValues.length >= 512) {
+            lines += "RAW_Data: " + lineValues.join(" ") + "\n";
+            lineValues = [];
+        }
+    }
+    if (lineValues.length > 0) {
+        lines += "RAW_Data: " + lineValues.join(" ") + "\n";
+    }
+
+    let content = header + lines;
+
+    // Write to file
+    if (storage.fileExists(SUB_FILE_PATH)) {
+        storage.remove(SUB_FILE_PATH);
+    }
+    let file = storage.openFile(SUB_FILE_PATH, "w", "create_always");
+    file.write(content);
+    file.close();
+}
+
+function transmitCommand(command, rollingCode, address) {
+    let timings = buildTransmission(command, rollingCode, address, 4);
+    writeSubFile(timings);
+
+    subghz.setup();
+    let result = subghz.transmitFile(SUB_FILE_PATH);
+    return result;
+}
+
+// Self-test
+ensureDataDir();
+print("Generating test signal...");
+let timings = buildTransmission(CMD_UP, 1, 0x654321, 4);
+writeSubFile(timings);
+print("Sub file written, " + timings.length.toString() + " timing values");
