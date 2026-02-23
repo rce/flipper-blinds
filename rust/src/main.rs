@@ -1,6 +1,7 @@
 #![no_main]
 #![no_std]
 
+extern crate flipperzero_alloc;
 extern crate flipperzero_rt;
 
 mod protocol;
@@ -10,7 +11,7 @@ mod subghz;
 use core::ffi::CStr;
 use flipperzero::dialogs::{DialogMessage, DialogMessageButton, DialogsApp};
 use flipperzero::gui::canvas::Align;
-use flipperzero::notification::{NotificationApp, feedback, led};
+use flipperzero::notification::{NotificationApp, led};
 use flipperzero_rt::{entry, manifest};
 
 use protocol::SomfyCommand;
@@ -229,7 +230,7 @@ fn do_transmit(
     let success = subghz::transmit(command, blind.rolling_code, blind.address, 4);
 
     if success {
-        notif.notify(&feedback::SUCCESS);
+        notif.notify(&led::ONLY_GREEN);
         // Increment rolling code
         let blind = &mut state.blinds[selected];
         blind.rolling_code = blind.rolling_code.wrapping_add(1);
@@ -239,7 +240,7 @@ fn do_transmit(
         let _ = storage::save_state(state);
         flipperzero::info!("TX success, new rc={}", state.blinds[selected].rolling_code);
     } else {
-        notif.notify(&feedback::ERROR);
+        notif.notify(&led::ONLY_RED);
         flipperzero::error!("TX failed!");
     }
 }

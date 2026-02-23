@@ -77,6 +77,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "flipperzero-alloc"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a44929c8030f9bf9117a91762875227764b4b7acb4f211f622e152876d79c48c"
+dependencies = [
+ "flipperzero-sys",
+]
+
+[[package]]
 name = "flipperzero-rt"
 version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -189,6 +198,7 @@ name = "somfy-blinds-rust"
 version = "0.1.0"
 dependencies = [
  "flipperzero",
+ "flipperzero-alloc",
  "flipperzero-rt",
  "flipperzero-sys",
  "heapless",

@@ -3,7 +3,9 @@
 //! Purr-fectly encodes frames for controlling Somfy blinds via the RTS protocol.
 //! Manchester encoding, obfuscation, and transmission building — the whole kitten caboodle.
 
-use heapless::Vec;
+extern crate alloc;
+
+use alloc::vec::Vec;
 
 // Timing constants (in microseconds) — must match the C implementation exactly
 const SOMFY_HALF_SYMBOL_US: u32 = 604;
@@ -15,7 +17,7 @@ const SOMFY_SW_SYNC_HIGH: u32 = 4550;
 const SOMFY_SW_SYNC_LOW: u32 = 604;
 const SOMFY_INTER_FRAME_GAP: u32 = 30415;
 
-pub const MAX_TIMINGS: usize = 600;
+const MAX_TIMINGS: usize = 600;
 
 /// A level (high/low) and duration pair for sub-GHz transmission.
 ///
@@ -90,34 +92,34 @@ pub fn build_transmission(
     rolling_code: u16,
     address: u32,
     repeats: u8,
-) -> Vec<LevelDuration, MAX_TIMINGS> {
+) -> Vec<LevelDuration> {
     let mut frame = build_frame(command, rolling_code, address);
     obfuscate(&mut frame);
 
     // First pass: build raw (unconsolidated) timings
-    let mut raw: Vec<LevelDuration, MAX_TIMINGS> = Vec::new();
+    let mut raw: Vec<LevelDuration> = Vec::with_capacity(MAX_TIMINGS);
 
     for r in 0..repeats {
         if r == 0 {
             // Wakeup pulse
-            let _ = raw.push(LevelDuration { level: true, duration: SOMFY_WAKEUP_HIGH });
-            let _ = raw.push(LevelDuration { level: false, duration: SOMFY_WAKEUP_LOW });
+            raw.push(LevelDuration { level: true, duration: SOMFY_WAKEUP_HIGH });
+            raw.push(LevelDuration { level: false, duration: SOMFY_WAKEUP_LOW });
             // 2x HW sync
             for _ in 0..2 {
-                let _ = raw.push(LevelDuration { level: true, duration: SOMFY_HW_SYNC_HIGH });
-                let _ = raw.push(LevelDuration { level: false, duration: SOMFY_HW_SYNC_LOW });
+                raw.push(LevelDuration { level: true, duration: SOMFY_HW_SYNC_HIGH });
+                raw.push(LevelDuration { level: false, duration: SOMFY_HW_SYNC_LOW });
             }
         } else {
             // 7x HW sync
             for _ in 0..7 {
-                let _ = raw.push(LevelDuration { level: true, duration: SOMFY_HW_SYNC_HIGH });
-                let _ = raw.push(LevelDuration { level: false, duration: SOMFY_HW_SYNC_LOW });
+                raw.push(LevelDuration { level: true, duration: SOMFY_HW_SYNC_HIGH });
+                raw.push(LevelDuration { level: false, duration: SOMFY_HW_SYNC_LOW });
             }
         }
 
         // SW sync
-        let _ = raw.push(LevelDuration { level: true, duration: SOMFY_SW_SYNC_HIGH });
-        let _ = raw.push(LevelDuration { level: false, duration: SOMFY_SW_SYNC_LOW });
+        raw.push(LevelDuration { level: true, duration: SOMFY_SW_SYNC_HIGH });
+        raw.push(LevelDuration { level: false, duration: SOMFY_SW_SYNC_LOW });
 
         // Manchester-encode 56 bits (7 bytes, MSB first)
         // Bit 1 = rising edge: low then high
@@ -126,23 +128,23 @@ pub fn build_transmission(
             for bit_pos in (0..8).rev() {
                 let bit = (byte >> bit_pos) & 1;
                 if bit == 1 {
-                    let _ = raw.push(LevelDuration { level: false, duration: SOMFY_HALF_SYMBOL_US });
-                    let _ = raw.push(LevelDuration { level: true, duration: SOMFY_HALF_SYMBOL_US });
+                    raw.push(LevelDuration { level: false, duration: SOMFY_HALF_SYMBOL_US });
+                    raw.push(LevelDuration { level: true, duration: SOMFY_HALF_SYMBOL_US });
                 } else {
-                    let _ = raw.push(LevelDuration { level: true, duration: SOMFY_HALF_SYMBOL_US });
-                    let _ = raw.push(LevelDuration { level: false, duration: SOMFY_HALF_SYMBOL_US });
+                    raw.push(LevelDuration { level: true, duration: SOMFY_HALF_SYMBOL_US });
+                    raw.push(LevelDuration { level: false, duration: SOMFY_HALF_SYMBOL_US });
                 }
             }
         }
 
         // Inter-frame gap (except after last frame)
         if r + 1 < repeats {
-            let _ = raw.push(LevelDuration { level: false, duration: SOMFY_INTER_FRAME_GAP });
+            raw.push(LevelDuration { level: false, duration: SOMFY_INTER_FRAME_GAP });
         }
     }
 
     // Consolidation: merge adjacent entries with the same level
-    let mut consolidated: Vec<LevelDuration, MAX_TIMINGS> = Vec::new();
+    let mut consolidated: Vec<LevelDuration> = Vec::with_capacity(raw.len());
 
     for entry in raw.iter() {
         if let Some(last) = consolidated.last_mut() {
@@ -151,7 +153,7 @@ pub fn build_transmission(
                 continue;
             }
         }
-        let _ = consolidated.push(*entry);
+        consolidated.push(*entry);
     }
 
     consolidated
