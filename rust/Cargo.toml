@@ -20,3 +20,4 @@ test = false
 flipperzero = "0.16.0"
 flipperzero-sys = "0.16.0"
 flipperzero-rt = "0.16.0"
+heapless = "0.9"
